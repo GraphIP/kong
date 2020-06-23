@@ -30,6 +30,7 @@ FROM ${KONG_BASE}
 USER root
 
 RUN apk add --no-cache \
+        git \
 		ca-certificates
 
 # set up nsswitch.conf for Go's "netgo" implementation
@@ -90,8 +91,6 @@ ENV GOPATH /go
 ENV PATH $GOPATH/bin:/usr/local/go/bin:$PATH
 
 RUN mkdir -p "$GOPATH/src" "$GOPATH/bin" && chmod -R 777 "$GOPATH"
-
-RUN apk add git
 
 RUN go get github.com/GoogleCloudPlatform/cloudsql-proxy/cmd/cloud_sql_proxy
 
