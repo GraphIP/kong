@@ -42,6 +42,7 @@ ENV GOLANG_VERSION 1.14.4
 RUN set -eux; \
 	apk add --no-cache --virtual .build-deps \
 		bash \
+		git \
 		gcc \
 		musl-dev \
 		openssl \
@@ -90,6 +91,8 @@ ENV GOPATH /go
 ENV PATH $GOPATH/bin:/usr/local/go/bin:$PATH
 
 RUN mkdir -p "$GOPATH/src" "$GOPATH/bin" && chmod -R 777 "$GOPATH"
+
+RUN go get github.com/GoogleCloudPlatform/cloudsql-proxy/cmd/cloud_sql_proxy
 
 # Rename default response headers (rename "Kong" to "Gateway")
 RUN sed -i s/"X-Kong/"X-Gateway/g /usr/local/share/lua/5.1/kong/constants.lua
