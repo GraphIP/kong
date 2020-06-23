@@ -42,7 +42,6 @@ ENV GOLANG_VERSION 1.14.4
 RUN set -eux; \
 	apk add --no-cache --virtual .build-deps \
 		bash \
-		git \
 		gcc \
 		musl-dev \
 		openssl \
@@ -91,6 +90,8 @@ ENV GOPATH /go
 ENV PATH $GOPATH/bin:/usr/local/go/bin:$PATH
 
 RUN mkdir -p "$GOPATH/src" "$GOPATH/bin" && chmod -R 777 "$GOPATH"
+
+RUN apk add git
 
 RUN go get github.com/GoogleCloudPlatform/cloudsql-proxy/cmd/cloud_sql_proxy
 
