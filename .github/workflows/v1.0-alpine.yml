@@ -1,4 +1,4 @@
-name: Publish GraphIP API Image [1.0-alpine]
+name: Publish GraphIP kong-custom image [latest]
 on: [push]
 jobs:
   build:

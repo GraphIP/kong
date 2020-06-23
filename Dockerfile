@@ -22,6 +22,13 @@ COPY packer.lua /packer.lua
 
 USER root
 
+RUN /usr/local/openresty/luajit/bin/luajit /packer.lua -- "$INJECTED_PLUGINS"
+
+
+FROM ${KONG_BASE}
+
+USER root
+
 RUN apk add --no-cache \
 		ca-certificates
 
@@ -83,13 +90,6 @@ ENV GOPATH /go
 ENV PATH $GOPATH/bin:/usr/local/go/bin:$PATH
 
 RUN mkdir -p "$GOPATH/src" "$GOPATH/bin" && chmod -R 777 "$GOPATH"
-
-RUN /usr/local/openresty/luajit/bin/luajit /packer.lua -- "$INJECTED_PLUGINS"
-
-
-FROM ${KONG_BASE}
-
-USER root
 
 # Rename default response headers (rename "Kong" to "Gateway")
 RUN sed -i s/"X-Kong/"X-Gateway/g /usr/local/share/lua/5.1/kong/constants.lua
