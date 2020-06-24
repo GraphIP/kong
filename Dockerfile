@@ -31,6 +31,7 @@ USER root
 
 # Install Google Cloud SQL Proxy
 RUN apk add --no-cache \
+		ca-certificates \
         wget \
 		&& wget https://dl.google.com/cloudsql/cloud_sql_proxy.linux.amd64 -O /usr/bin/cloud_sql_proxy \
 		&& chmod +x /usr/bin/cloud_sql_proxy
