@@ -6,6 +6,7 @@ This dockerfile takes an existing Kong image and adds custom plugins to it. Buil
 
 - ✅ [kong-plugin-moesif](https://github.com/Moesif/kong-plugin-moesif). The [Moesif Kong plugin](https://docs.konghq.com/hub/moesif/kong-plugin-moesif/) captures API traffic from [Kong API Gateway](https://getkong.org)
 and logs it to [Moesif API Analytics](https://www.moesif.com).
+- ✅ [Cloud SQL Proxy](https://github.com/GoogleCloudPlatform/cloudsql-proxy). Cloud SQL Proxy allows a user with the appropriate permissions to connect to a Second Generation Google Cloud SQL database without having to deal with IP whitelisting or SSL certificates manually.
 
 
 # Supported tags
