@@ -11,6 +11,7 @@ local readfile = require("pl.utils").readfile
 local is_dir = require("pl.path").isdir
 local is_file = require("pl.path").isfile
 
+local CUSTOM_TEMPLATE="/plugins/custom_nginx.conf"
 
 io.stdout:setvbuf("no")
 io.stderr:setvbuf("no")
@@ -51,19 +52,33 @@ local platforms = {
     commands = {              -- run before anything else in build container
       "apk update",
       "apk add git",
+      "apk add wget",
       "apk add zip",
+      "apk add gcc",
+      "apk add musl-dev",
     },
     target_commands = {       -- run before installing in the target image
     },
   }, {
-    check = "yum --version",  -- check for CentOS
+    check = "yum --version",  -- check for CentOS + rhel
     commands = {              -- run before anything else in build container
       "yum -y install git",
       "yum -y install unzip",
       "yum -y install zip",
+      "yum -y install gcc gcc-c++ make",
     },
     target_commands = {       -- run before installing in the target image
       "yum -y install unzip",
+    },
+  }, {
+    check = "apt -v",         -- check for Ubuntu
+    commands = {              -- run before anything else in build container
+      "apt update",
+      "apt install -y zip",
+      "apt install -y wget",
+      "apt install -y build-essential",
+    },
+    target_commands = {       -- run before installing in the target image
     },
   },
 }
@@ -102,11 +117,29 @@ local function prep_platform()
 end
 
 
-local get_args = function()
+local function is_empty_file(filename)
+  local t = readfile(filename)
+  if t then
+    if t:gsub("\n", ""):gsub("\t", ""):gsub(" ","") == "" then
+      return true
+    end
+  end
+  return false
+end
+
+
+local function get_args()
   if not arg or
      not arg[1] or
      arg[1] == "--" and not arg[2] then
-    fail("no arguments to parse, commandline: " .. pretty(arg or {}))
+    -- no args, but maybe a custom config file?
+
+    if is_empty_file(CUSTOM_TEMPLATE) then
+      fail("no arguments to parse, commandline: " .. pretty(arg or {}))
+    else
+      stdout("no plugins specified, but a custom template exists")
+      return
+    end
   end
 
   local list = {}
@@ -123,7 +156,11 @@ local get_args = function()
   end
 
   if #list == 0 then
-    fail("no arguments to parse, commandline: " .. pretty(arg))
+    if is_empty_file(CUSTOM_TEMPLATE) then
+      fail("no arguments to parse, commandline: " .. pretty(arg))
+    else
+      stdout("no plugins specified, but a custom template exists")
+    end
   end
 
   stdout("rocks to install: " .. pretty(list))
@@ -198,6 +235,7 @@ local function install_plugins(plugins, lr_flag)
     end
 
     stdout("installed: "..rock)
+    exec("luarocks show "..rock)
   end
 end
 
@@ -217,22 +255,10 @@ local function pack_rocks(rocks)
 end
 
 
-local function is_empty_file(filename)
-  local t = readfile(filename)
-  if t then
-    if t:gsub("\n", ""):gsub("\t", ""):gsub(" ","") == "" then
-      return true
-    end
-  end
-  return false
-end
-
-
 local function check_custom_template()
-  local filename = "/plugins/custom_nginx.conf"
-  if is_empty_file(filename) then
+  if is_empty_file(CUSTOM_TEMPLATE) then
     -- it's the empty_file, delete it
-    os.remove(filename)
+    os.remove(CUSTOM_TEMPLATE)
     stdout("No custom template found")
     return
   end
@@ -314,11 +340,15 @@ do
   end
   added_rocks = post_installed_rocks
 end
-if not next(added_rocks) then
-  fail("no additional rocks were added")
-end
-for k in pairs(added_rocks) do
-  stdout("added rock: "..k)
+if (not next(added_rocks)) then
+  if is_empty_file(CUSTOM_TEMPLATE) then
+    fail("no additional rocks were added, nor a custom template specified")
+  end
+  stdout("No rocks were added")
+else
+  for k in pairs(added_rocks) do
+    stdout("added rock: "..k)
+  end
 end
 
 
@@ -329,6 +359,9 @@ for plugin_name in pairs(get_plugins()) do
     table.insert(plugins, plugin_name)
     stdout("added plugin: "..plugin_name)
   end
+end
+if not next(plugins) then
+  stdout("No plugins were added")
 end
 
 
@@ -348,10 +381,10 @@ cat <<'EOF' >> /docker-entrypoint.sh
 #!/bin/sh
 set -e
 
-if [[ "$KONG_PLUGINS" == "" ]]; then
-  if [[ "$KONG_CUSTOM_PLUGINS" == "" ]]; then
+if [ "$KONG_PLUGINS" = "" ]; then
+  if [ "$KONG_CUSTOM_PLUGINS" = "" ]; then
     export KONG_CUSTOM_PLUGINS="%s"
-    if [[ "$KONG_CUSTOM_PLUGINS" == "" ]]; then
+    if [ "$KONG_CUSTOM_PLUGINS" = "" ]; then
       export KONG_PLUGINS="bundled"
     else
       export KONG_PLUGINS="bundled,$KONG_CUSTOM_PLUGINS"
@@ -363,9 +396,22 @@ fi
 # wins, so the user can still override this template
 INITIAL="$1 $2"
 if [ -f /custom_nginx.conf ]; then
-  INITIAL="$1 $2 --nginx-conf=/custom_nginx.conf"
+  # only for these commands support "--nginx-conf"
+  echo 1: $INITIAL
+  if [ "$INITIAL" = "kong prepare" ] || \
+     [ "$INITIAL" = "kong reload"  ] || \
+     [ "$INITIAL" = "kong restart" ] || \
+     [ "$INITIAL" = "kong start"   ] ; then
+    INITIAL="$1 $2 --nginx-conf=/custom_nginx.conf"
+  fi
 fi
-shift 2
+# shift 1 by 1; if there is only 1 arg, then "shift 2" fails
+if [ ! "$1" = "" ]; then
+  shift
+fi
+if [ ! "$1" = "" ]; then
+  shift
+fi
 
 exec /old-entrypoint.sh $INITIAL "$@"
 EOF
@@ -386,7 +432,7 @@ fi
 rm -rf /plugins
 ]=]
 local t = {}
-local cmd = "luarocks install --deps-mode=none %s && rm %s"
+local cmd = "luarocks install --tree=system --deps-mode=none %s && rm %s"
 for _, filename in ipairs(files("/plugins/")) do
   if filename:find("%.rock$") then
     table.insert(t, cmd:format(filename, filename))
@@ -403,4 +449,3 @@ stdout(script)
 
 
 header("Completed packing rocks and/or template")
-

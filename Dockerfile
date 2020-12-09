@@ -1,4 +1,4 @@
-ARG KONG_BASE=kong:2.2.0-alpine
+ARG KONG_BASE=kong:2.2.1-alpine
 
 
 
