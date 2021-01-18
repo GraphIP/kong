@@ -11,7 +11,7 @@ and logs it to [Moesif API Analytics](https://www.moesif.com).
 
 # Supported tags
 
--   `1.4-alpine`, `latest (1.4-alpine)`
+-   `1.5-alpine`, `latest (1.5-alpine)`
 
 # Quick reference
 

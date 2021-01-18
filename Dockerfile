@@ -1,4 +1,4 @@
-ARG KONG_BASE=kong:2.2.1-alpine
+ARG KONG_BASE=kong:2.3.0-alpine
 
 
 
@@ -36,7 +36,7 @@ RUN apk add --no-cache \
 		&& wget https://dl.google.com/cloudsql/cloud_sql_proxy.linux.amd64 -O /usr/bin/cloud_sql_proxy \
 		&& chmod +x /usr/bin/cloud_sql_proxy
 
-# Rename default response headers (rename "Kong" to "Gateway")
+# Rename/Whitelabel default response headers (renames "Kong" to "Gateway")
 RUN sed -i s/"X-Kong/"X-Gateway/g /usr/local/share/lua/5.1/kong/constants.lua
 
 COPY --from=build /plugins /plugins
