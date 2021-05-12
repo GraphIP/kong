@@ -1,4 +1,4 @@
-name: Publish kong-custom image [1.7-alpine]
+name: Publish kong-custom image [1.8-alpine]
 on: [push]
 jobs:
   build:
@@ -8,7 +8,7 @@ jobs:
     - name: Publish to Registry
       uses: elgohr/Publish-Docker-Github-Action@master
       env:
-        KONG_BASE: kong:2.4.0-alpine
+        KONG_BASE: kong:2.4.1-alpine
         PLUGINS: --server=http://luarocks.org/manifests/moesif kong-plugin-moesif 1.0.1-1
       with:
         name: graphip/kong
