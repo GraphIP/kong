@@ -15,4 +15,4 @@ jobs:
         username: ${{ secrets.DOCKER_USERNAME }}
         password: ${{ secrets.DOCKER_PASSWORD }}
         buildargs: KONG_BASE,PLUGINS
-        tags: "latest,1.7-alpine"
+        tags: "latest,1.8-alpine"
