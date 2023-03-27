@@ -6,7 +6,7 @@ jobs:
     steps:
     - uses: actions/checkout@master
     - name: Publish to Registry
-      uses: elgohr/Publish-Docker-Github-Action@master
+      uses: elgohr/Publish-Docker-Github-Action@v5
       env:
         KONG_BASE: kong:2.5.0-alpine
         PLUGINS: --server=http://luarocks.org/manifests/moesif kong-plugin-moesif 1.0.9-1
